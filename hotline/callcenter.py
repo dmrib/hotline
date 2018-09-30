@@ -14,9 +14,24 @@ class Operator:
     '''
     def __init__(self, id):
         self.id = id
+        self.status = 'available'
 
     def __repr__(self):
-        return f'Operator #{self.id}'
+        return f'Operator #{self.id} - {self.status}'
+
+
+class Call:
+    '''
+    Call abstraction.
+
+    Args:
+        id (int): call id.
+    '''
+    def __init__(self, id):
+        self.id = id
+
+    def __repr__(self):
+        return f'Call #{self.id}'
 
 
 class CallCenter(cmd.Cmd):
@@ -45,8 +60,39 @@ class CallCenter(cmd.Cmd):
         '''
         for i in range(n_operators):
             id = string.ascii_uppercase[i]
-            self.operators[id] = Operator(id)    
+            self.operators[id] = Operator(id)
 
+    def forward_call(self, call):
+        '''
+        Forwards call to available operator or waiting queue.
+
+        Args:
+            call (Call): incoming call object.
+        Returns:
+            None.
+        '''
+        print(f'Call {call.id} received')
+
+        for operator in self.operators.values():
+            if operator.status == 'available':
+                operator.status = 'ringing'
+                self.ongoing[operator] = call
+                print(f'Call {call.id} ringing for operator {operator.id}')        
+                return
+
+        self.waiting.append(call)
+
+    def do_call(self, id):
+        '''
+        Handles incoming call.
+
+        Args:
+            id (int): call id.
+        '''
+        call = Call(id)
+        self.forward_call(call)
+        
 
 if __name__ == '__main__':
     call_center = CallCenter(2)
+    call_center.cmdloop('Hello, welcome!')
