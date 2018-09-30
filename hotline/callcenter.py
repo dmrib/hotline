@@ -111,6 +111,25 @@ class CallCenter(cmd.Cmd):
         print(f'Call {call.id} answered by operator {operator.id}')
         print('\n', self.operators, self.ongoing, self.waiting)
 
+    def do_reject(self, id):
+        '''
+        Operator rejects call.
+
+        Args:
+            id (str): operator id.
+        Returns:
+            None.
+        '''
+        operator = self.operators[id]
+        call = self.ongoing[operator]
+
+        del self.ongoing[operator]
+        operator.status = 'available'        
+        print(f'Call {call.id} rejected by operator {operator.id}')        
+        
+        self.forward_call(call)        
+        print('\n', self.operators, self.ongoing, self.waiting)
+
 if __name__ == '__main__':
     call_center = CallCenter(2)
     call_center.cmdloop('Hello, welcome!')
