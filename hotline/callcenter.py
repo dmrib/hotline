@@ -71,8 +71,6 @@ class CallCenter(cmd.Cmd):
         Returns:
             None.
         '''
-        print(f'Call {call.id} received')
-
         for operator in self.operators.values():
             if operator.status == 'available':
                 operator.status = 'ringing'
@@ -81,6 +79,7 @@ class CallCenter(cmd.Cmd):
                 return
 
         self.waiting.append(call)
+        print(f'Call {call.id} waiting in queue')
 
     def do_call(self, id):
         '''
@@ -88,10 +87,29 @@ class CallCenter(cmd.Cmd):
 
         Args:
             id (int): call id.
+        Returns:
+            None.
         '''
         call = Call(id)
+        print(f'Call {call.id} received')
         self.forward_call(call)
         
+    def do_answer(self, id):
+        '''
+        Operator accepts call.
+
+        Args:
+            id (str): operator id.
+        Returns:
+            None.
+        '''
+        operator = self.operators[id]
+        call = self.ongoing[operator]
+        
+        operator.status = 'busy'
+        
+        print(f'Call {call.id} answered by operator {operator.id}')
+        print('\n', self.operators, self.ongoing, self.waiting)
 
 if __name__ == '__main__':
     call_center = CallCenter(2)
