@@ -17,7 +17,7 @@ class Operator:
         self.status = 'available'
 
     def __repr__(self):
-        return f'Operator #{self.id} - {self.status}'
+        return f'Operator #{self.id}: {self.status}'
 
 
 class Call:
@@ -43,6 +43,7 @@ class CallCenter(cmd.Cmd):
     '''
     def __init__(self, n_operators):
         super().__init__()
+        self.prompt = '(Hotline)'
         self.operators = {}
         self.ongoing = {}
         self.waiting = deque()
@@ -81,6 +82,83 @@ class CallCenter(cmd.Cmd):
         self.waiting.append(call)
         print(f'Call {call.id} waiting in queue')
 
+    def finish_call(self, id):
+        '''
+        Finish received call.
+
+        Args:
+            id (int): call id.
+        Returns:
+            None.
+        '''
+        if not self.remove_from_waiting(id):
+            self.hangup_call(id)
+        
+        self.step_waiting_queue()
+
+    def remove_from_waiting(self, id):
+        '''
+        Remove call from waiting queue.
+
+        Args:
+            id (int): call id.
+        Returns:
+            removed (bool): True if call was found and deleted, False otherwise.
+        '''
+        found = False
+        for call in self.waiting:
+            if call.id == id:
+                found = True
+                print(f'Call {call.id} missed')
+                break
+        
+        if found:
+            self.waiting.remove(call)
+
+        return found
+
+    def hangup_call(self, id):
+        '''
+        Finish ongoing call and makes operator available.
+
+        Args:
+            id (int): call id.
+        Returns:
+            None.
+        '''
+        for operator, call in self.ongoing.items():
+            if call.id == id:
+                if operator.status == 'ringing':
+                    print(f'Call {call.id} missed')
+                else:
+                    print(f'Call {call.id} finished and operator {operator.id} is available')
+                operator.status = 'available'                
+                break
+        
+        self.ongoing.pop(operator)
+
+    def step_waiting_queue(self):
+        '''
+        Forwards call in the first position of waiting queue.
+
+        Args:
+            None.
+        Returns:
+            None.
+        '''
+        if len(self.waiting) > 0:
+            call = self.waiting[0]
+        else:
+            return
+
+        for operator in self.operators.values():
+            if operator.status == 'available':
+                operator.status = 'ringing'
+                self.ongoing[operator] = call
+                self.waiting.popleft()
+                print(f'Call {call.id} ringing for operator {operator.id}')        
+                break
+
     def do_call(self, id):
         '''
         Handles incoming call.
@@ -109,7 +187,6 @@ class CallCenter(cmd.Cmd):
         operator.status = 'busy'
         
         print(f'Call {call.id} answered by operator {operator.id}')
-        print('\n', self.operators, self.ongoing, self.waiting)
 
     def do_reject(self, id):
         '''
@@ -123,12 +200,46 @@ class CallCenter(cmd.Cmd):
         operator = self.operators[id]
         call = self.ongoing[operator]
 
-        del self.ongoing[operator]
+        self.ongoing.pop(operator)
         operator.status = 'available'        
         print(f'Call {call.id} rejected by operator {operator.id}')        
         
         self.forward_call(call)        
-        print('\n', self.operators, self.ongoing, self.waiting)
+        self.step_waiting_queue()        
+
+    def do_hangup(self, id):
+        '''
+        Finish call.
+
+        Args:
+            id (int): call id.
+        Returns:
+            None.
+        '''
+        self.finish_call(id)        
+
+    def do_state(self, _):
+        '''
+        Print application current state for debugging purposes.
+
+        Args:
+            None.
+        Returns:
+            None.
+        '''
+        print('\n', 'OPERATORS:')
+        for operator in self.operators:
+            print(f'    {self.operators[operator]}')
+        
+        print('\n', 'ONGOING CALLS:')
+        for operator in self.ongoing:
+            print(f'    {operator}, {self.ongoing[operator]}')
+
+        print('\n', 'WAITING QUEUE:')
+        for call in self.waiting:
+            print(f'    Call #{call.id}', '\n')
+
+
 
 if __name__ == '__main__':
     call_center = CallCenter(2)
