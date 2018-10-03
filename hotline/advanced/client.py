@@ -4,7 +4,7 @@ from twisted.internet import reactor, protocol
 
 class EchoClient(protocol.Protocol):
     def connectionMade(self):
-        self.transport.write('{"command" : "hangup", "id": "4"}'.encode('utf-8'))
+        self.transport.write('{"command" : "call", "id": "1"}'.encode('utf-8'))
 
     def dataReceived(self, data):
         message = json.loads(data.decode('utf-8'))
