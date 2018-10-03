@@ -140,7 +140,7 @@ class HotlineProtocol(protocol.Protocol):
         return msg
 
     def forward_call(self, call):
-         '''
+        '''
         Forwards call to available operator or waiting queue.
 
         Args:
