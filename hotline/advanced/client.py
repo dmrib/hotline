@@ -2,7 +2,7 @@ import json
 from twisted.internet import reactor, protocol
 
 
-class EchoClient(protocol.Protocol):
+class HotlineClient(protocol.Protocol):
     def connectionMade(self):
         self.transport.write('{"command" : "call", "id": "1"}'.encode('utf-8'))
 
@@ -12,9 +12,9 @@ class EchoClient(protocol.Protocol):
         self.transport.loseConnection()
 
 
-class EchoFactory(protocol.ClientFactory):
+class HotlineFactory(protocol.ClientFactory):
     def buildProtocol(self, addr):
-        return EchoClient()
+        return HotlineClient()
 
     def clientConnectionFailed(self, connector, reason):
         print("Connection failed.")
@@ -25,5 +25,5 @@ class EchoFactory(protocol.ClientFactory):
         reactor.stop()
         
 
-reactor.connectTCP("localhost", 5678, EchoFactory())
+reactor.connectTCP("localhost", 5678, HotlineFactory())
 reactor.run()
