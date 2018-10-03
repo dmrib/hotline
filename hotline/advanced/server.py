@@ -140,6 +140,14 @@ class HotlineProtocol(protocol.Protocol):
         return msg
 
     def forward_call(self, call):
+         '''
+        Forwards call to available operator or waiting queue.
+
+        Args:
+            call (Call): incoming call object.
+        Returns:
+            msg (str): queue manager response.
+        '''
         for operator in self.factory.operators.values():
             if operator.status == 'available':
                 operator.status = 'ringing'
@@ -151,6 +159,14 @@ class HotlineProtocol(protocol.Protocol):
 
 
     def remove_from_waiting(self, id):
+        '''
+        Remove call from waiting queue.
+
+        Args:
+            id (int): call id.
+        Returns:
+            msg (str): queue manager response.
+        '''
         msg = ''
         for call in self.factory.waiting:
             if call.id == id:
@@ -163,6 +179,14 @@ class HotlineProtocol(protocol.Protocol):
         return msg
 
     def hangup_call(self, id):
+        '''
+        Finish ongoing call and makes operator available.
+
+        Args:
+            id (int): call id.
+        Returns:
+            msg (str): queue manager response.
+        '''
         for operator, call in self.factory.ongoing.items():
             if call.id == id:
                 if operator.status == 'ringing':
@@ -176,6 +200,14 @@ class HotlineProtocol(protocol.Protocol):
         return msg
 
     def step_waiting_queue(self):
+        '''
+        Forwards call in the first position of waiting queue.
+
+        Args:
+            None.
+        Returns:
+            msg (str): queue manager response.
+        '''
         if len(self.factory.waiting) > 0:
             call = self.factory.waiting[0]
         else:
@@ -200,9 +232,25 @@ class HotlineFactory(Factory):
         self.load_operators(n_operators)
 
     def buildProtocol(self, addr):
+        '''
+        Creates Twister Protocol object.
+
+        Args:
+            addr (object): an object implementing twisted.internet.interfaces.IAddress .
+        Returns:
+            protocol (HotlineProtocol): HotlineProtocol object instance.
+        '''
         return HotlineProtocol(self)
 
     def load_operators(self, n_operators):
+        '''
+        Load call operators in application. Max is 26.
+
+        Args:
+            n_operators (int): number of operators to be created.
+        Returns:
+            None.
+        '''
         for i in range(n_operators):
             id = string.ascii_uppercase[i]
             self.operators[id] = Operator(id)
