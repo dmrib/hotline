@@ -102,6 +102,14 @@ class HotlineClient(protocol.Protocol):
 
 class HotlineFactory(protocol.ClientFactory):
     def buildProtocol(self, addr):
+        '''
+        Protocol object factory method.
+
+        Args:
+            addr (IAdress): an object implementing twisted.internet.interfaces.IAddress.
+        Returns:
+            protocol (HotlineClient): protocol object.
+        '''
         return HotlineClient()
         
 
