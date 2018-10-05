@@ -71,13 +71,12 @@ class HotlineProtocol(protocol.Protocol):
         elif command == 'hangup':
             return self.process_hangup(int(id))
 
-    def process_call(self, id, msg=''):
+    def process_call(self, id):
         '''
         Process <call> command in the queue manager.
 
         Args:
             id (int): call id.
-            msg (str): previous queue manager responses.
         Returns:
             msg (str): previous manager responses concatenated with new responses string.
         '''
@@ -152,11 +151,31 @@ class HotlineProtocol(protocol.Protocol):
             if operator.status == 'available':
                 operator.status = 'ringing'
                 self.factory.ongoing[operator] = call
+                reactor.callLater(10, self.timout_call, operator)
                 return f'\nCall {call.id} ringing for operator {operator.id}'
 
         self.factory.waiting.append(call)
         return f'\nCall {call.id} waiting in queue'
 
+    def timout_call(self, operator):
+        '''
+        Timeout non answered calls.
+
+        Args:
+            operator (Operator): unresponsive operator.
+        Returns:
+            None.
+        '''
+        if operator in self.factory.ongoing and operator.status == 'ringing':
+            lost_call = self.factory.ongoing[operator]
+            self.factory.ongoing.pop(operator)
+            operator.status = 'available'
+            
+            msg = f'Call {lost_call.id} ignored by operator {operator.id}'
+            msg += self.forward_call(lost_call)
+            msg += self.step_waiting_queue()
+            msg = json.dumps({"message": msg})
+            self.transport.write(msg.encode('utf-8'))            
 
     def remove_from_waiting(self, id):
         '''
@@ -218,6 +237,7 @@ class HotlineProtocol(protocol.Protocol):
                 operator.status = 'ringing'
                 self.factory.ongoing[operator] = call
                 self.factory.waiting.popleft()
+                reactor.callLater(10, self.timout_call, operator)
                 return f'\nCall {call.id} ringing for operator {operator.id}'
         
         return ''
