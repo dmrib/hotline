@@ -166,16 +166,17 @@ class HotlineProtocol(protocol.Protocol):
         Returns:
             None.
         '''
-        if operator in self.factory.ongoing and operator.status == 'ringing':
-            lost_call = self.factory.ongoing[operator]
-            self.factory.ongoing.pop(operator)
-            operator.status = 'available'
-            
-            msg = f'Call {lost_call.id} ignored by operator {operator.id}'
-            msg += self.forward_call(lost_call)
-            msg += self.step_waiting_queue()
-            msg = json.dumps({"message": msg})
-            self.transport.write(msg.encode('utf-8'))            
+        if self.factory.timeout:
+            if operator in self.factory.ongoing and operator.status == 'ringing':
+                lost_call = self.factory.ongoing[operator]
+                self.factory.ongoing.pop(operator)
+                operator.status = 'available'
+                
+                msg = f'Call {lost_call.id} ignored by operator {operator.id}'
+                msg += self.forward_call(lost_call)
+                msg += self.step_waiting_queue()
+                msg = json.dumps({"message": msg})
+                self.transport.write(msg.encode('utf-8'))            
 
     def remove_from_waiting(self, id):
         '''
@@ -244,10 +245,11 @@ class HotlineProtocol(protocol.Protocol):
 
 
 class HotlineFactory(Factory):
-    def __init__(self, n_operators):
+    def __init__(self, n_operators, timeout):
         self.operators = {}
         self.ongoing = {}
         self.waiting = deque()
+        self.timeout = timeout
 
         self.load_operators(n_operators)
 
@@ -276,5 +278,5 @@ class HotlineFactory(Factory):
             self.operators[id] = Operator(id)
 
 
-reactor.listenTCP(5678, HotlineFactory(2))
+reactor.listenTCP(5678, HotlineFactory(2, True))
 reactor.run()
