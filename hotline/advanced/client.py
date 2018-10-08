@@ -113,5 +113,6 @@ class HotlineFactory(protocol.ClientFactory):
         return HotlineClient()
         
 
+# Twisted reactor loop
 reactor.connectTCP("localhost", 5678, HotlineFactory())
 reactor.run()
